@@ -82,12 +82,13 @@ describe('getting started page (getting-started.html)', () => {
 describe.each(['index.html', 'getting-started.html'])('TC-029 privacy and CSP structure: %s', (fileName) => {
   const doc = loadPage(fileName);
 
-  it('declares a Content Security Policy that allows only same-origin resources and no scripts', () => {
+  it('declares a Content Security Policy that allows only same-origin resources and same-origin scripts', () => {
     const meta = doc.querySelector('meta[http-equiv="Content-Security-Policy"]');
     expect(meta).not.toBeNull();
     const policy = meta.getAttribute('content');
     expect(policy).toContain("default-src 'self'");
-    expect(policy).toContain("script-src 'none'");
+    expect(policy).toContain("script-src 'self'");
+    expect(policy).not.toContain('unsafe-inline');
     expect(policy).toContain("img-src 'self' data:");
   });
 
@@ -98,12 +99,35 @@ describe.each(['index.html', 'getting-started.html'])('TC-029 privacy and CSP st
     }
   });
 
-  it('has no script elements and no inline style attributes', () => {
-    expect(doc.querySelectorAll('script')).toHaveLength(0);
+  it('has exactly one external blocking theme script, no inline script and no inline style attributes', () => {
+    const scripts = [...doc.querySelectorAll('script')];
+    expect(scripts).toHaveLength(1);
+    expect(scripts[0].getAttribute('src')).toBe('theme.js');
+    expect(scripts[0].textContent.trim()).toBe('');
+    expect(scripts[0].hasAttribute('defer')).toBe(false);
+    expect(scripts[0].hasAttribute('async')).toBe(false);
     expect(doc.querySelectorAll('[style]')).toHaveLength(0);
   });
 
   it('links the shared stylesheet', () => {
     expect(doc.querySelector('link[rel="stylesheet"]').getAttribute('href')).toBe('styles.css');
+  });
+});
+
+describe.each(['index.html', 'getting-started.html'])('theme toggle markup: %s', (fileName) => {
+  const doc = loadPage(fileName);
+
+  it('QA-028: has one initially hidden Dark mode button in a header before main', () => {
+    const toggles = doc.querySelectorAll('#theme-toggle');
+    expect(toggles).toHaveLength(1);
+    const toggle = toggles[0];
+    expect(toggle.tagName).toBe('BUTTON');
+    expect(toggle.getAttribute('type')).toBe('button');
+    expect(toggle.hasAttribute('hidden')).toBe(true);
+    expect(toggle.getAttribute('aria-pressed')).toBe('false');
+    expect(toggle.textContent.trim()).toBe('Dark mode');
+    const header = toggle.closest('header');
+    expect(header).not.toBeNull();
+    expect(header.nextElementSibling.tagName).toBe('MAIN');
   });
 });

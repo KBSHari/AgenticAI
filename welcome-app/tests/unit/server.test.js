@@ -53,6 +53,21 @@ describe('static server serving the real public directory', () => {
     expect(res.headers['content-type']).toBe(MIME_TYPES['.css']);
   });
 
+  it('QA-025: serves the theme script with a JavaScript content type and nosniff', async () => {
+    const res = await request(port, '/theme.js');
+    expect(res.status).toBe(200);
+    expect(MIME_TYPES['.js']).toBe('text/javascript; charset=utf-8');
+    expect(res.headers['content-type']).toBe(MIME_TYPES['.js']);
+    expect(res.headers['x-content-type-options']).toBe('nosniff');
+  });
+
+  it('QA-027: answers HEAD for the theme script without a body', async () => {
+    const res = await request(port, '/theme.js', 'HEAD');
+    expect(res.status).toBe(200);
+    expect(res.headers['content-type']).toBe(MIME_TYPES['.js']);
+    expect(res.body).toBe('');
+  });
+
   it('TC-008: returns a generic 404 for an unknown path', async () => {
     const res = await request(port, '/does-not-exist');
     expect(res.status).toBe(404);
