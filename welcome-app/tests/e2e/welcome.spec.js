@@ -58,6 +58,8 @@ test.describe('content', () => {
   test('TC-009: Get Started works from the keyboard', async ({ page }) => {
     await page.goto('/');
     await page.keyboard.press('Tab');
+    await expect(page.getByRole('button', { name: 'Dark mode' })).toBeFocused();
+    await page.keyboard.press('Tab');
     await expect(page.getByRole('link', { name: 'Get Started' })).toBeFocused();
     await page.keyboard.press('Enter');
     await expect(page).toHaveURL(/\/getting-started\.html$/);
@@ -135,6 +137,7 @@ test.describe('accessibility', () => {
   test('TC-023, TC-024: Get Started shows a visible focus indicator with enough contrast', async ({ page }) => {
     await page.goto('/');
     await page.keyboard.press('Tab');
+    await page.keyboard.press('Tab');
     const link = page.getByRole('link', { name: 'Get Started' });
     await expect(link).toBeFocused();
     const style = await link.evaluate((element) => {
@@ -153,7 +156,7 @@ test.describe('accessibility', () => {
 });
 
 test.describe('size and speed', () => {
-  test('TC-025, TC-026: the welcome page is under 100 KB and only loads HTML and CSS', async ({ page }) => {
+  test('TC-025, TC-026: the welcome page is under 100 KB and only loads HTML, CSS and the theme script', async ({ page }) => {
     const bodies = [];
     const resourceTypes = [];
     page.on('request', (request) => {
@@ -164,7 +167,7 @@ test.describe('size and speed', () => {
     await page.waitForLoadState('networkidle');
     const total = (await Promise.all(bodies)).reduce((sum, size) => sum + size, 0);
     expect(total).toBeLessThan(100 * 1024);
-    expect([...new Set(resourceTypes)].sort()).toEqual(['document', 'stylesheet']);
+    expect([...new Set(resourceTypes)].sort()).toEqual(['document', 'script', 'stylesheet']);
   });
 
   test('TC-027: largest contentful paint is under 2.5 s with network and CPU throttling', async ({ page, context }) => {
